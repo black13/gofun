@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/black13/gofun/cassandra/cassandra"
+	"github.com/black13/gofun/cassandra"
 )
 
 func main() {
