@@ -16,7 +16,20 @@ import (
 
 const PORT = 3540
 
+type simulator struct {
+	commands map[string]func() interface{}
+	port int
+}
+
+func NewSimulator(port int) *simulator {
+	p := new(simulator)
+	p.port = port
+	p.commands = make(map[string]func() interface{})
+	return p
+}
+
 func main() {
+	/*
 	server, err := net.Listen("tcp", ":"+strconv.Itoa(PORT))
 	if server == nil {
 		panic(fmt.Sprintf("echo: failed to listen on %v: %v", server, err))
@@ -25,8 +38,56 @@ func main() {
 	for {
 		go handleConn(<-conns)
 	}
+	*/
+	sim := NewSimulator(3540)
+	sim.connect()
+
 }
 
+func (v *simulator) connect() {
+
+	server, err := net.Listen("tcp", ":"+strconv.Itoa(v.port))
+	if server == nil {
+		panic(fmt.Sprintf("echo: failed to listen on %v: %v", server, err))
+	}
+	conns := v.clientConns(server)
+	for {
+		go v.handleConn(<-conns)
+	}
+
+}
+
+func (v *simulator) clientConns(listener net.Listener) chan net.Conn {
+	ch := make(chan net.Conn)
+	i := 0
+	go func() {
+		for {
+			client, err := listener.Accept()
+			if client == nil {
+				//fmt.Printf("couldn't accept: " + err.String())
+				fmt.Printf("echo: failed to listen on %v: %v", client, err)
+				continue
+			}
+			i++
+			fmt.Printf("%d: %v <-> %v\n", i, client.LocalAddr(), client.RemoteAddr())
+			ch <- client
+		}
+	}()
+	return ch
+	}
+
+	func (v *simulator) handleConn(client net.Conn) {
+		b := bufio.NewReader(client)
+		for {
+			line, err := b.ReadBytes('\n')
+			if err != nil { // EOF, or worse
+				break
+			}
+			client.Write(line)
+		}
+	}
+
+/*
 func clientConns(listener net.Listener) chan net.Conn {
 	ch := make(chan net.Conn)
 	i := 0
@@ -56,3 +117,4 @@ func handleConn(client net.Conn) {
 		client.Write(line)
 	}
 }
+*/
