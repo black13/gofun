@@ -25,6 +25,7 @@ func NewSimulator(port int) *simulator {
 	p := new(simulator)
 	p.port = port
 	p.commands = make(map[string]func() interface{})
+	p.commands["exit\n"] = p.done
 	return p
 }
 
@@ -83,8 +84,20 @@ func (v *simulator) clientConns(listener net.Listener) chan net.Conn {
 			if err != nil { // EOF, or worse
 				break
 			}
+
+			fin, ok := v.commands[string(line)]
+			if ok {
+				ret := fin().(string)
+				client.Write([]byte(ret))
+				client.Close()
+			}
+
 			client.Write(line)
 		}
+	}
+
+	func (v *simulator) done() interface{} {
+		return "done"
 	}
 
 /*
