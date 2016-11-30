@@ -1,0 +1,5 @@
+package gofun
+
+func Export() {
+  
+}
